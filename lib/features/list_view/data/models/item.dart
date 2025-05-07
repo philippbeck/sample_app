@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs
 import 'package:json_annotation/json_annotation.dart';
 import 'package:sample_app/features/list_view/data/enums/gender.dart';
-import 'package:sample_app/features/list_view/data/enums/item_type.dart';
 
 part 'item.g.dart';
 

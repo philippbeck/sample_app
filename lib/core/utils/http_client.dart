@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:sample_app/core/utils/error_cubit.dart';
@@ -51,10 +52,13 @@ class HttpClient {
         return data.map((e) => e as Map<String, dynamic>).toList();
       } else if (data is Map<String, dynamic>) {
         return data;
+      } else if (data is String) {
+        return json.decode(data);
       } else {
         return null;
       }
     } catch (error) {
+      errorCubit.showUnknownError();
       return Future.error(error);
     }
   }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sample_app/core/utils/bloc_observer.dart';
 import 'package:sample_app/core/utils/error_cubit.dart';
 import 'package:sample_app/core/widgets/global_bloc_providers.dart';
+import 'package:sample_app/features/list_view/presentation/list_view_page.dart';
 
 void main() {
+  Bloc.observer = const AppBlocObserver();
   runApp(const MainApp());
 }
 
@@ -28,10 +31,7 @@ class MainApp extends StatelessWidget {
               );
             }
           },
-          child: Scaffold(
-            appBar: AppBar(title: const Text('Sample App')),
-            body: const SafeArea(child: Center(child: Text('Hello World!'))),
-          ),
+          child: const ListViewPage(),
         ),
       ),
     );
