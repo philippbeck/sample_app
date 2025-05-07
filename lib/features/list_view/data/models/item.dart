@@ -9,19 +9,22 @@ part 'item.g.dart';
 class Item {
   Item({
     required this.id,
-    required this.type,
     required this.gender,
     required this.expiresAt,
-    required this.categories,
+    required this.headline,
+    required this.imageUrl,
+    required this.url,
   });
 
   factory Item.fromJson(Map<String, dynamic> json) => _$ItemFromJson(json);
   final int id;
-  final ContentType type;
   final Gender gender;
   @JsonKey(name: 'expires_at')
   final DateTime expiresAt;
-  final List<String> categories;
+  final String headline;
+  @JsonKey(name: 'image_url')
+  final String imageUrl;
+  final String url;
 
   Map<String, dynamic> toJson() => _$ItemToJson(this);
 }
