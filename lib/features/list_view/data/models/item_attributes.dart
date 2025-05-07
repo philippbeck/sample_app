@@ -1,8 +1,8 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:sample_app/data/models/generic_attributes.dart';
-import 'package:sample_app/data/models/item.dart';
+import 'package:sample_app/features/list_view/data/models/generic_attributes.dart';
+import 'package:sample_app/features/list_view/data/models/item.dart';
 
 part 'item_attributes.g.dart';
 

@@ -1,9 +1,9 @@
 // ignore_for_file: public_member_api_docs
 
-import 'package:sample_app/data/enums/item_type.dart';
-import 'package:sample_app/data/models/image_attributes.dart';
-import 'package:sample_app/data/models/item_attributes.dart';
-import 'package:sample_app/data/models/url_attributes.dart';
+import 'package:sample_app/features/list_view/data/enums/item_type.dart';
+import 'package:sample_app/features/list_view/data/models/image_attributes.dart';
+import 'package:sample_app/features/list_view/data/models/item_attributes.dart';
+import 'package:sample_app/features/list_view/data/models/url_attributes.dart';
 
 abstract class GenericAttributes {
   const GenericAttributes();
