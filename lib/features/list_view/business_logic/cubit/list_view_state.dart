@@ -22,4 +22,8 @@ final class ListViewLoaded extends ListViewState {
   List<Object> get props => [listItems];
 }
 
+final class DataSourceSwitched extends ListViewLoaded {
+  const DataSourceSwitched({required super.listItems});
+}
+
 final class ListViewFailedToLoad extends ListViewState {}

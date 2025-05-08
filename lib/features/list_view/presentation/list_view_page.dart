@@ -5,6 +5,7 @@ import 'package:sample_app/features/list_view/business_logic/cubit/gender_cubit.
 import 'package:sample_app/features/list_view/business_logic/cubit/list_view_cubit.dart';
 import 'package:sample_app/features/list_view/data/enums/gender.dart';
 import 'package:sample_app/features/list_view/data/enums/item_type.dart';
+import 'package:sample_app/features/list_view/data/models/content.dart';
 import 'package:sample_app/features/list_view/data/models/image_attributes.dart';
 import 'package:sample_app/features/list_view/data/models/item_attributes.dart';
 import 'package:sample_app/features/list_view/presentation/widgets/brand_slider.dart';
@@ -22,6 +23,60 @@ class ListViewPage extends StatefulWidget {
 
 class _ListViewPageState extends State<ListViewPage> {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  List<Content> _items = [];
+
+  void _updateItems({required List<Content> items, Gender? gender}) {
+    final newList =
+        items
+            .where(
+              (element) =>
+                  element.gender == null ||
+                  element.gender == gender ||
+                  gender == null,
+            )
+            .toList();
+
+    // Find items to remove
+    final itemsToRemove =
+        _items
+            .where(
+              (oldItem) => !newList.any((newItem) => newItem.id == oldItem.id),
+            )
+            .toList();
+
+    // Find items to add
+    final itemsToAdd =
+        newList
+            .where(
+              (newItem) => !_items.any((oldItem) => newItem.id == oldItem.id),
+            )
+            .toList();
+
+    // Remove items
+    for (final itemToRemove in itemsToRemove) {
+      final index = _items.indexWhere((item) => item.id == itemToRemove.id);
+      if (index != -1) {
+        _listKey.currentState?.removeItem(
+          index,
+          (context, animation) => _slideTransition(context, index, animation),
+          duration: const Duration(milliseconds: 300),
+        );
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _items.removeAt(index);
+        });
+      }
+    }
+
+    // Insert new items
+    for (final itemToAdd in itemsToAdd) {
+      final index = newList.indexWhere((item) => item.id == itemToAdd.id);
+      _items.insert(index, itemToAdd);
+      _listKey.currentState?.insertItem(
+        index,
+        duration: const Duration(milliseconds: 300),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +92,35 @@ class _ListViewPageState extends State<ListViewPage> {
             body: RefreshIndicator(
               onRefresh: context.read<ListViewCubit>().getListContent,
               child: BlocConsumer<GenderCubit, Gender?>(
-                listener: (context, state) {
-                  context.read<ListViewCubit>().setFilter(state);
+                listener: (context, gender) {
+                  final state = context.read<ListViewCubit>().state;
+                  if (state is ListViewLoaded) {
+                    _updateItems(items: state.listItems, gender: gender);
+                  }
                 },
                 builder: (context, gender) {
-                  return BlocBuilder<ListViewCubit, ListViewState>(
+                  return BlocConsumer<ListViewCubit, ListViewState>(
+                    listener: (context, state) {
+                      if (state is DataSourceSwitched) {
+                        _updateItems(items: state.listItems, gender: gender);
+                      } else if (state is ListViewLoaded) {
+                        _items =
+                            state.listItems
+                                .where(
+                                  (element) =>
+                                      element.gender == gender ||
+                                      gender == null ||
+                                      element.gender == null,
+                                )
+                                .toList();
+                      }
+                    },
+                    buildWhen:
+                        (previous, current) =>
+                            !(previous is ListViewLoaded &&
+                                    current is DataSourceSwitched ||
+                                previous is DataSourceSwitched &&
+                                    current is DataSourceSwitched),
                     builder: (context, state) {
                       switch (state) {
                         case ListViewInitial():
@@ -51,39 +130,10 @@ class _ListViewPageState extends State<ListViewPage> {
                             child: CircularProgressIndicator.adaptive(),
                           );
                         case ListViewLoaded():
-                          return ListView(
+                          return AnimatedList(
                             key: _listKey,
-                            children:
-                                state.listItems.map((item) {
-                                  switch (item.type) {
-                                    case ContentType.teaser:
-                                      final attributes =
-                                          item.attributes as ImageAttributes;
-                                      return ListTile(
-                                        onTap: () {
-                                          UrlLauncherHelper.openUrl(
-                                            url: attributes.url,
-                                          );
-                                        },
-                                        title: Text(attributes.headline),
-                                        leading: Image.network(
-                                          attributes.imageUrl,
-                                        ),
-                                      );
-                                    case ContentType.slider:
-                                      final attributes =
-                                          item.attributes as ItemAttributes;
-                                      return ItemSlider(
-                                        key: Key('item_slider_${item.id}'),
-                                        items: attributes.items,
-                                      );
-                                    case ContentType.brandSlider:
-                                      return BrandSlider(
-                                        key: Key('brand_slider_${item.id}'),
-                                        item: item,
-                                      );
-                                  }
-                                }).toList(),
+                            initialItemCount: _items.length,
+                            itemBuilder: _slideTransition,
                           );
                         case ListViewFailedToLoad():
                           return Stack(
@@ -103,6 +153,40 @@ class _ListViewPageState extends State<ListViewPage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _slideTransition(
+    BuildContext context,
+    int index,
+    Animation<double> animation,
+  ) {
+    final item = _items[index];
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(-1, 0),
+        end: Offset.zero,
+      ).animate(animation),
+      child: switch (item.type) {
+        ContentType.teaser => ListTile(
+          key: Key('teaser_${item.id}'),
+          onTap: () {
+            UrlLauncherHelper.openUrl(
+              url: (item.attributes as ImageAttributes).url,
+            );
+          },
+          title: Text((item.attributes as ImageAttributes).headline),
+          leading: Image.network((item.attributes as ImageAttributes).imageUrl),
+        ),
+        ContentType.slider => ItemSlider(
+          key: Key('item_slider_${item.id}'),
+          items: (item.attributes as ItemAttributes).items,
+        ),
+        ContentType.brandSlider => BrandSlider(
+          key: Key('brand_slider_${item.id}'),
+          item: item,
+        ),
+      },
     );
   }
 
